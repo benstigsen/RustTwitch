@@ -1,5 +1,4 @@
 mod commands;
-mod coloro; use crate::coloro::color;
 
 use std::io::{Write, BufReader, BufRead};
 use std::net::TcpStream;
@@ -14,7 +13,6 @@ const CHAN: &str = "channel"; // Lowercase (No "#" in front)
 */
 
 fn main() {
-    println!("{}", color("hello", "red"));
 	let mut socket = TcpStream::connect("irc.chat.twitch.tv:6667").unwrap();
 
 	send_raw(&mut socket, &format!("PASS {}", AUTH));
