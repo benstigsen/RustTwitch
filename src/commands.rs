@@ -4,7 +4,7 @@ pub fn handle_command(user: &str, msg: &str) -> (bool, String) {
 	let response = match data[0] {
 		"ping" 	=> ping(),
 		"hug" 	=> hug(user),
-		_ 		=> "".to_string()
+		_ 	=> "".to_string()
 	};
 
 	// Add checks to see if it's an admin command (disconnect, etc)
