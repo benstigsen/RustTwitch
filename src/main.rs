@@ -10,6 +10,7 @@ const CHAN: &str = "channel"; // Lowercase (No "#" in front)
 /* TO-DO: 
     - Add colors for messages, commands and responses
     - Add responses to a vector, then respond every X second (thread)
+    - Refactor code... this looks way too messy
 */
 
 fn main() {
@@ -39,15 +40,26 @@ fn main() {
     			println!("[COMMAND] {}: {}", user, msg);
 
                 let response = commands::handle_command(user, msg);
+
                 if response.0 == true {
-                    send_msg(&socket, &response.1);
-                    println!("[RESPONSE] {}", response.1)
+
+                    if response.1 == "dc".to_string() {
+                        send_msg(&socket, "Disconnecting"); 
+                        send_msg(&socket, "/disconnect");
+                        println!("Disconnected");
+                        break;
+                    } else {
+                        send_msg(&socket, &response.1);
+                        println!("[RESPONSE] {}", response.1);
+                    }
                 };
     		} else {
     			println!("[MESSAGE] {}: {}", user, msg);
     		}
     	}
     }
+
+    println!("Finished");
 }
 
 fn send_raw(socket: &mut TcpStream, data: &str) {

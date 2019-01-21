@@ -4,10 +4,12 @@ pub fn handle_command(user: &str, msg: &str) -> (bool, String) {
 	let response = match data[0] {
 		"ping" 	=> ping(),
 		"hug" 	=> hug(user),
-		_ 	=> "".to_string()
+
+		// Admin commands
+		"dc"	=> disconnect(user),
+		_ 		=> "".to_string()
 	};
 
-	// Add checks to see if it's an admin command (disconnect, etc)
 	if response == "" {
 		return (false, msg.to_string())
 	} else {
@@ -16,6 +18,24 @@ pub fn handle_command(user: &str, msg: &str) -> (bool, String) {
 
 }
 
+// ADMIN \\
+fn disconnect(user: &str) -> String {
+	
+	let allowed = match user {
+		"some_user" => true,
+		_			=> false
+	};
+
+	let response = match allowed {
+		true 	=> "dc",
+		false 	=> "",
+	};
+
+	response.to_string()
+}
+
+
+// REGULAR \\
 fn ping() -> String {
 	"Pong!".to_string()
 }
