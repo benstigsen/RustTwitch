@@ -1,76 +1,73 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod commands;
+mod credentials;
 
-use std::io::{Write, BufReader, BufRead};
+use credentials::*;
 use std::net::TcpStream;
-
-const AUTH: &str = "oauth:someVeryLongTokenHere";
-const USER: &str = "Botname";
-const CHAN: &str = "channel"; // Lowercase (No "#" in front)
+use std::io::{Write, BufReader, BufRead};
 
 /* TO-DO: 
-    - Add colors for messages, commands and responses
-    - Add responses to a vector, then respond every X second (thread)
-    - Refactor code... this looks way too messy
+	- Add colors for messages, commands and responses
+	- Add responses to a vector, then respond every X second (thread)
 */
 
+lazy_static! {
+    static ref SOCKET: TcpStream = TcpStream::connect("irc.chat.twitch.tv:6667").unwrap();
+}
+
 fn main() {
-	let mut socket = TcpStream::connect("irc.chat.twitch.tv:6667").unwrap();
 
-	send_raw(&mut socket, &format!("PASS {}", AUTH));
-    send_raw(&mut socket, &format!("NICK {}", USER));
-	send_raw(&mut socket, &format!("JOIN #{}", CHAN));
+	// AUTHENTICATION
+	send_raw(&format!("PASS {}", AUTH));
+	send_raw(&format!("NICK {}", USER));
+	send_raw(&format!("JOIN #{}", CHAN));
 
-    send_msg(&socket, "/me joined the chat!");
-    println!("Connection to the channel #{} has been established!", CHAN);
+	// CONNECTION ESTABLISHED
+	send_msg("/me joined the chat!");
+	println!("Connection to the channel #{} has been established!\n", CHAN);
 
-    let buffered = BufReader::new(&socket);
+	let buffered = BufReader::new(&*SOCKET);
 
-    let mut lines = buffered.lines();
-    while let Some(Ok(line)) = lines.next() {
+	let mut lines = buffered.lines();
+	while let Some(Ok(line)) = lines.next() {
 
-    	if &line == "PING :tmi.twitch.tv\r\n" {
-    		println!("Received PING message");
-    	}
+		dbg!(&line);
 
-    	if line.contains("PRIVMSG") {
-            let user = &line[1..line.find("!").unwrap()];
-    		let msg = line[1..].splitn(2, ':').nth(1).unwrap();
+		if line.contains("PRIVMSG") {
+			let user = &line[1..line.find("!").unwrap()];		// GET USERNAME
+			let msg = line[1..].splitn(2, ':').nth(1).unwrap();	// GET MESSAGE
 
-    		if msg.chars().next() == Some('!') {
-    			println!("[COMMAND] {}: {}", user, msg);
+			match msg.chars().next() == Some('!') {
+				true  => {println!("[COMMAND] {}: {}", user, msg); 	// COMMAND
+						  commands::handle_command(user, msg)},
+				false => println!("[MESSAGE] {}: {}", user, msg)	// MESSAGE
+			};
+		};
 
-                let response = commands::handle_command(user, msg);
-
-                if response.0 == true {
-
-                    if response.1 == "dc".to_string() {
-                        send_msg(&socket, "Disconnecting"); 
-                        send_msg(&socket, "/disconnect");
-                        println!("Disconnected");
-                        break;
-                    } else {
-                        send_msg(&socket, &response.1);
-                        println!("[RESPONSE] {}", response.1);
-                    }
-                };
-    		} else {
-    			println!("[MESSAGE] {}: {}", user, msg);
-    		}
-    	}
-    }
-
-    println!("Finished");
+		if &line == "PING :tmi.twitch.tv" {
+			println!("[IRC DATA] PING :tmi.twitch.tv");
+			send_raw("PONG :tmi.twitch.tv");
+		};
+	}
 }
 
-fn send_raw(socket: &mut TcpStream, data: &str) {
-	let msg = String::from(format!("{}\r\n", data));
+// SEND RAW DATA
+fn send_raw(data: &str) {
+	let msg 	= String::from(format!("{}\r\n", data));
+	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_raw failed!");
 
-	let result = socket.write(msg.as_bytes());
-	println!("{:?}", result);
+	match data.contains("PASS oauth") {
+		true  => println!("[RAW DATA] [{:?}]: {}{:*<30}", result, data[0..11].to_string(), ""),
+		false => println!("[RAW DATA] [{:?}]: {}", result, data)
+	};
 }
 
-fn send_msg(mut socket: &TcpStream, data: &str) {
-	let msg = String::from(format!("PRIVMSG #{} :{}\r\n", CHAN, data));
+// SEND CHAT MESSAGES
+fn send_msg(data: &str) {
+	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", CHAN, data));
+	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
 
-	socket.write(msg.as_bytes());
+	println!("[RESPONSE] [{:?}]: {}", result, data)
 }

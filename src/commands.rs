@@ -1,45 +1,36 @@
-pub fn handle_command(user: &str, msg: &str) -> (bool, String) {
+pub fn handle_command(user: &str, msg: &str) {
 	let data: Vec<&str> = msg[1..].split_whitespace().collect();
 
-	let response = match data[0] {
+	match data[0] {
+		// ADMIN / MODERATOR
+		"dc"	=> disconnect(user),
+
+		// REGULAR
 		"ping" 	=> ping(),
 		"hug" 	=> hug(user),
 
-		// Admin commands
-		"dc"	=> disconnect(user),
-		_ 		=> "".to_string()
+		_ 		=> ()
 	};
-
-	if response == "" {
-		return (false, msg.to_string())
-	} else {
-		return (true, response)
-	};
-
 }
 
 // ADMIN \\
-fn disconnect(user: &str) -> String {
-	
+fn disconnect(user: &str) {
 	let allowed = match user {
-		"some_user" => true,
+		crate::CHAN => true,
 		_			=> false
 	};
 
-	let response = match allowed {
-		true 	=> "dc",
-		false 	=> "",
-	};
-
-	response.to_string()
+	if allowed {
+		crate::send_msg("Disconnecting");
+		crate::send_msg("/disconnect");
+	}
 }
-
 
 // REGULAR \\
-fn ping() -> String {
-	"Pong!".to_string()
+fn ping() {
+	crate::send_msg("Pong!")
 }
 
-fn hug(user: &str) -> String {
-	format!("/me hugs {}!", user)
+fn hug(user: &str) {
+	crate::send_msg(&format!("/me hugs {}!", user))
 }
