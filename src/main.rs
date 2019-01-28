@@ -40,17 +40,25 @@ fn main() {
 			let msg = line[1..].splitn(2, ':').nth(1).unwrap();	// GET MESSAGE
 
 			match msg.chars().next() == Some('!') {
-				true  => {println!("[COMMAND] {}: {}", user, msg); 	// COMMAND
-						  commands::handle_command(user, msg)},
-				false => println!("[MESSAGE] {}: {}", user, msg)	// MESSAGE
+				true  => {recv_cmd(msg, user); commands::handle_command(user, msg)}, // COMMAND
+				false => {recv_msg(msg, user);}	// MESSAGE
+			};
+		} else {
+			match &line[..] {
+				"PING :tmi.twitch.tv" => { from_irc(&line); send_raw("PONG :tmi.twitch.tv") },
+				_					  => from_irc(&line)
 			};
 		};
+	};
+}
 
-		if &line == "PING :tmi.twitch.tv" {
-			println!("[IRC DATA] PING :tmi.twitch.tv");
-			send_raw("PONG :tmi.twitch.tv");
-		};
-	}
+fn recv_cmd(cmd: &str, user: &str) {println!("[COMMAND] {}: {}", user, cmd)}
+
+fn recv_msg(msg: &str, user: &str) {println!("[MESSAGE] {}: {}", user, msg)}
+
+// DATA FROM IRC
+fn from_irc(data: &str) {
+	println!("[IRC DATA] {}", data);
 }
 
 // SEND RAW DATA
