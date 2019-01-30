@@ -11,6 +11,8 @@ use std::io::{Write, BufReader, BufRead};
 /* TO-DO: 
 	- Add colors for messages, commands and responses
 	- Add responses to a vector, then respond every X second (thread)
+	- Add different kind of credential loading. (Could be done from a normal txt file)
+	- 
 */
 
 lazy_static! {
@@ -45,20 +47,30 @@ fn main() {
 			};
 		} else {
 			match &line[..] {
-				"PING :tmi.twitch.tv" => { from_irc(&line); send_raw("PONG :tmi.twitch.tv") },
-				_					  => from_irc(&line)
+				"PING :tmi.twitch.tv" => { recv_irc(&line); send_raw("PONG :tmi.twitch.tv") },
+				_					  =>   recv_irc(&line)
 			};
 		};
 	};
 }
 
-fn recv_cmd(cmd: &str, user: &str) {println!("[COMMAND] {}: {}", user, cmd)}
-
+// MESSAGE
 fn recv_msg(msg: &str, user: &str) {println!("[MESSAGE] {}: {}", user, msg)}
 
+// COMMAND
+fn recv_cmd(cmd: &str, user: &str) {println!("[COMMAND] {}: {}", user, cmd)}
+
 // DATA FROM IRC
-fn from_irc(data: &str) {
+fn recv_irc(data: &str) {
 	println!("[IRC DATA] {}", data);
+}
+
+// SEND CHAT MESSAGES
+fn send_msg(data: &str) {
+	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", CHAN, data));
+	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
+
+	println!("[RESPONSE] [{:?}]: {}", result, data)
 }
 
 // SEND RAW DATA
@@ -70,12 +82,4 @@ fn send_raw(data: &str) {
 		true  => println!("[RAW DATA] [{:?}]: {}{:*<30}", result, data[0..11].to_string(), ""),
 		false => println!("[RAW DATA] [{:?}]: {}", result, data)
 	};
-}
-
-// SEND CHAT MESSAGES
-fn send_msg(data: &str) {
-	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", CHAN, data));
-	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
-
-	println!("[RESPONSE] [{:?}]: {}", result, data)
 }
