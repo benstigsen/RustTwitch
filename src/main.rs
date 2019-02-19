@@ -4,31 +4,35 @@ extern crate lazy_static;
 mod commands;
 mod credentials;
 
-use credentials::*;
 use std::net::TcpStream;
 use std::io::{Write, BufReader, BufRead};
 
 /* TO-DO: 
 	- Add colors for messages, commands and responses
 	- Add responses to a vector, then respond every X second (thread)
-	- Add different kind of credential loading. (Could be done from a normal txt file)
-	- 
+	- Load credentials from .txt file [DONE]
+		- Clarify where the line AUTH, USER and CHAN variable should be
 */
 
 lazy_static! {
-    static ref SOCKET: TcpStream = TcpStream::connect("irc.chat.twitch.tv:6667").unwrap();
+    static ref SOCKET: TcpStream 		= TcpStream::connect("irc.chat.twitch.tv:6667").unwrap();
+    static ref CREDENTIALS: Vec<String> = credentials::get_credentials("src/credentials.txt").unwrap();
+
+    static ref AUTH: &'static str = &CREDENTIALS[0];
+	static ref USER: &'static str = &CREDENTIALS[1];
+	static ref CHAN: &'static str = &CREDENTIALS[2];
 }
 
-fn main() {
 
+fn main() {
 	// AUTHENTICATION
-	send_raw(&format!("PASS {}", AUTH));
-	send_raw(&format!("NICK {}", USER));
-	send_raw(&format!("JOIN #{}", CHAN));
+	send_raw(&format!("PASS {}", *AUTH));
+	send_raw(&format!("NICK {}", *USER));
+	send_raw(&format!("JOIN #{}", *CHAN));
 
 	// CONNECTION ESTABLISHED
 	send_msg("/me joined the chat!");
-	println!("Connection to the channel #{} has been established!\n", CHAN);
+	println!("Connection to the channel #{} has been established!\n", *CHAN);
 
 	let buffered = BufReader::new(&*SOCKET);
 
@@ -39,7 +43,7 @@ fn main() {
 
 		if line.contains("PRIVMSG") {
 			let user = &line[1..line.find("!").unwrap()];		// GET USERNAME
-			let msg = line[1..].splitn(2, ':').nth(1).unwrap();	// GET MESSAGE
+			let msg  =  line[1..].splitn(2, ':').nth(1).unwrap();	// GET MESSAGE
 
 			match msg.chars().next() == Some('!') {
 				true  => {recv_cmd(msg, user); commands::handle_command(user, msg)}, // COMMAND
@@ -67,7 +71,7 @@ fn recv_irc(data: &str) {
 
 // SEND CHAT MESSAGES
 fn send_msg(data: &str) {
-	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", CHAN, data));
+	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", *CHAN, data));
 	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
 
 	println!("[RESPONSE] [{:?}]: {}", result, data)
