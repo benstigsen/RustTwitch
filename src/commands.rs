@@ -9,9 +9,9 @@ pub fn handle_command(user: &str, msg: &str) {
 		"dc"		=> disconnect(user),
 
 		// REGULAR
-		"project" 	=> command_from_text(),
-		"ping" 		=> ping(),
-		"hug" 		=> hug(user),
+		"example" | "from_file"	=> response_from_file(),
+		"ping" 					=> ping(),
+		"hug" 					=> hug(user),
 
 		_ 			=> ()
 	};
@@ -29,7 +29,7 @@ fn disconnect(user: &str) {
 }
 
 // REGULAR \\
-fn command_from_text() {
+fn response_from_file() {
 	let mut file = File::open("src/responses/example.txt").expect("Unable to open the file");
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Unable to read the file");
