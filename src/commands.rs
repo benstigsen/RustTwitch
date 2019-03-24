@@ -6,7 +6,7 @@ pub fn handle_command(user: &str, msg: &str) {
 
 	match data[0] {
 		// ADMIN / MODERATOR
-		"dc"		=> disconnect(user),
+		"disconnect" | "dc"		=> disconnect(user),
 
 		// REGULAR
 		"example" | "from_file"	=> response_from_file(),
@@ -19,7 +19,7 @@ pub fn handle_command(user: &str, msg: &str) {
 
 // ADMIN \\
 fn disconnect(user: &str) {
-	let allowed_users = [*crate::CHAN, "some_other_user"];
+	let allowed_users = [*crate::CHAN, "some_other_user"];	// Add users here that are allowed to use the "disconnect" command
 	let allowed = allowed_users.contains(&user);
 
 	if allowed {
