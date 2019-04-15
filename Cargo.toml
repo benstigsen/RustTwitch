@@ -6,3 +6,4 @@ authors = ["Benjamin Stigsen <benjamin.stigsen@gmail.com>"]
 
 [dependencies]
 lazy_static = "1.2.0"
+reqwest = { git = "https://github.com/seanmonstar/reqwest" }
