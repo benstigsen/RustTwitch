@@ -4,15 +4,14 @@ extern crate lazy_static;
 mod coloro;
 mod commands;
 mod credentials;
+mod configuration;
 
 use std::io::{Write, BufReader, BufRead};
 use std::{sync::mpsc, thread, time};
 use std::net::TcpStream;
-use coloro::color;
 
-/* TO-DO: 
-	- Add responses to a vector, then respond every X second (thread)
-*/
+use coloro::color;
+use configuration::*;
 
 // SOCKET AND AUTHENTICATION CREDENTIALS
 lazy_static! {
@@ -23,9 +22,6 @@ lazy_static! {
 	static ref USER: &'static str = &CREDENTIALS[1];
 	static ref CHAN: &'static str = &CREDENTIALS[2];
 }
-
-const PREFIX: char = '!';  // Prefix for chat commands
-
 
 fn main() {
 
@@ -39,13 +35,13 @@ fn main() {
 	println!("Connection to the channel #{} has been established!\n", *CHAN);
 	
 	// Setup Thread Message Queueing
-	let (sender, receiver) = mpsc::sync_channel(10);
+	let (sender, receiver) = mpsc::sync_channel(MAX_RESPONSE_QUEUE);
 
     thread::spawn(move || {
 
         while let Ok(message) = receiver.recv() {
 
-	        thread::sleep(time::Duration::from_millis(2000));
+	        thread::sleep(time::Duration::from_millis(DELAY_BETWEEN_REQUESTS));
 	        send_msg(message);
         }
     });
@@ -117,7 +113,6 @@ fn send_msg(data: String) {
 	let _result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
 
 	println!("{} {}", color("yellow", "[SENDING]"), data);
-	//println!("{} [{:?}]: {}", color("yellow", "[SENDING]"), result, data);
 }
 
 // SEND RAW DATA

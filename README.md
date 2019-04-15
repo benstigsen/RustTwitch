@@ -32,9 +32,9 @@ channel
 
 ### To-Do
 
-- [ ] Add API commands
+- [x] Add API commands
 
-- [ ] Add easy configuration
+- [x] Add easy configuration
 
 - [x] Add delay between requests (global ban protection)
 
