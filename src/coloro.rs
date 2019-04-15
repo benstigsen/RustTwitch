@@ -1,7 +1,7 @@
 pub fn color(color: &str, text: &str) -> String {
 
 	// Color codes and styles can be found here: 
-	// 		 http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
+	// http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
 	
 	let output_color = match color {
 		"black" 				=> "30;1m",
@@ -28,7 +28,7 @@ pub fn color(color: &str, text: &str) -> String {
 		"white"					=> "37;1m",
 		"bg_white"				=> "47;1m",
 
-		_						=> "37;1m"
+		_						=> "37;1m" // White
 	};
 
 	format!("\u{001b}[{}{}\u{001b}[0m", output_color, text)

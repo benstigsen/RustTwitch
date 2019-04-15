@@ -1,18 +1,16 @@
 use std::fs::File;
 use std::io::{prelude::*, BufReader, Error};
-use std::env;
 
+// Load credentials
 pub fn get_credentials(filename: &str) -> Result<Vec<String>, Error> {
-	//println!("PATH: {}", env::current_exe()?.display());
 
-	let file = File::open(filename).unwrap();
-	let buf = BufReader::new(file);
+	let file = File::open(filename).unwrap(); // Open file
+	let buf = BufReader::new(file);		      // Read file into buffer
 
-	let mut contents = Vec::new();
+	let mut contents = Vec::new(); // Vector for file content
 
 	for line in buf.lines() {
-		contents.push(line.unwrap())
-
+		contents.push(line.unwrap()) // Save line in file to vector
 	}
 	
 	Ok(contents)

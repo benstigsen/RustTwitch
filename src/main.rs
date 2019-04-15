@@ -5,15 +5,13 @@ mod coloro;
 mod commands;
 mod credentials;
 
-use std::net::TcpStream;
 use std::io::{Write, BufReader, BufRead};
+use std::{sync::mpsc, thread, time};
+use std::net::TcpStream;
 use coloro::color;
 
 /* TO-DO: 
-	- Add colors for messages, commands and responses
 	- Add responses to a vector, then respond every X second (thread)
-	- Load credentials from .txt file [DONE]
-		- Clarify where the line AUTH, USER and CHAN variables should be
 */
 
 // SOCKET AND AUTHENTICATION CREDENTIALS
@@ -31,31 +29,58 @@ const PREFIX: char = '!';  // Prefix for chat commands
 
 fn main() {
 
-	// AUTHENTICATION
+	// Authentication
 	send_raw(&format!("PASS {}", *AUTH));
 	send_raw(&format!("NICK {}", *USER));
 	send_raw(&format!("JOIN #{}", *CHAN));
 
-	// CONNECTION ESTABLISHED
-	send_msg("/me joined the chat!");
+	// Connection Established
+	send_msg("/me joined the chat!".to_string());
 	println!("Connection to the channel #{} has been established!\n", *CHAN);
+	
+	// Setup Thread Message Queueing
+	let (sender, receiver) = mpsc::sync_channel(10);
 
-	let buffered = BufReader::new(&*SOCKET);
+    thread::spawn(move || {
+
+        while let Ok(message) = receiver.recv() {
+
+	        thread::sleep(time::Duration::from_millis(2000));
+	        send_msg(message);
+        }
+    });
+
+    // Setup Buffer
+	let buffered = BufReader::new(&*SOCKET); // Buffer which contains every line received from the IRC
 	
 	let mut lines = buffered.lines();
 	while let Some(Ok(line)) = lines.next() {
 
-		// If chat message
+		// Chat Message
 		if line.contains("PRIVMSG") {
 			let user = &line[1..line.find("!").unwrap()];			// GET USERNAME
 			let msg  =  line[1..].splitn(2, ':').nth(1).unwrap();	// GET MESSAGE
 
-			// If command
-			match msg.chars().next() == Some(PREFIX) {
-				true  => {recv_cmd(msg, user); commands::handle_command(user, msg)}, // COMMAND
-				false => {recv_msg(msg, user);}	// MESSAGE
+
+			let response = match msg.chars().next() == Some(PREFIX)
+			{
+				// Command
+				true => {recv_cmd(msg, user); commands::handle_command(user, msg)},
+				
+				// Message
+				false => {recv_msg(msg, user); "".to_string()}
 			};
+			
+			// Send response if there is any
+			if response != "".to_string()
+			{
+				sender.send(response.to_string()).unwrap();
+			}
+
+		// IRC Data
 		} else {
+
+			// Respond to Twitch IRC "PING" message
 			match &line[..] {
 				"PING :tmi.twitch.tv" => { recv_irc(&line); send_raw("PONG :tmi.twitch.tv") }, // TWITCH IRC PING MESSAGE
 				_					  =>   recv_irc(&line)
@@ -65,13 +90,13 @@ fn main() {
 }
 
 // MESSAGE
-fn recv_msg(msg: &str, user: &str) 
+fn recv_msg(user: &str, msg: &str) 
 {
 	println!("{} {}: {}", color("green", "[MESSAGE]"), user, msg);
 }
 
 // COMMAND
-fn recv_cmd(cmd: &str, user: &str) 
+fn recv_cmd(user: &str, cmd: &str) 
 {
 	println!("{} {}: {}", color("blue", "[COMMAND]"), user, cmd);
 }
@@ -87,22 +112,16 @@ fn recv_irc(data: &str) {
 }
 
 // SEND CHAT MESSAGES
-fn send_msg(data: &str) {
+fn send_msg(data: String) {
 	let msg 	= String::from(format!("PRIVMSG #{} :{}\r\n", *CHAN, data));
-	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
+	let _result  = (&*SOCKET).write(msg.as_bytes()).expect("send_msg failed!");
 
-	println!("{} [{:?}]: {}", color("yellow", "[SENDING]"), result, data);
+	println!("{} {}", color("yellow", "[SENDING]"), data);
+	//println!("{} [{:?}]: {}", color("yellow", "[SENDING]"), result, data);
 }
 
 // SEND RAW DATA
 fn send_raw(data: &str) {
-	let msg 	= String::from(format!("{}\r\n", data));
-	let result  = (&*SOCKET).write(msg.as_bytes()).expect("send_raw failed!");
-
-	/*
-	match data.contains("PASS oauth") {
-		true  => println!("[RAW DATA] [{:?}]: {}{:*<30}", result, data[0..11].to_string(), ""),
-		false => println!("[RAW DATA] [{:?}]: {}", result, data)
-	};
-	*/
+	let msg = String::from(format!("{}\r\n", data));
+	let _result = (&*SOCKET).write(msg.as_bytes()).expect("send_raw failed!"); // Send data
 }

@@ -1,20 +1,25 @@
 use std::io::prelude::*;
 use std::fs::File;
 
-pub fn handle_command(user: &str, msg: &str) {
+// Handle Commands
+pub fn handle_command(user: &str, msg: &str) -> String {
 	let data: Vec<&str> = msg[1..].split_whitespace().collect();
 
-	match data[0] {
+	let response = match data[0] {
 		// ADMIN / MODERATOR
-		"disconnect" | "dc"		=> disconnect(user),
+		"disconnect" | "dc"	=> {disconnect(user); "".to_string()},
 
 		// REGULAR
-		"example" | "from_file"	=> response_from_file(),
-		"ping" 					=> ping(),
-		"hug" 					=> hug(user),
+		"example" | "file"	=> response_from_file(),
 
-		_ 			=> ()
+		"ping" 				=> "Pong!".to_string(),
+		"hug" 				=> format!("/me hugs {}!", user),
+
+		// DEFAULT
+		_ 					=> format!("{} is not a recognized command!", data[0])
 	};
+
+	response
 }
 
 // ADMIN \\
@@ -23,23 +28,17 @@ fn disconnect(user: &str) {
 	let allowed = allowed_users.contains(&user);
 
 	if allowed {
-		crate::send_msg("Disconnecting");
-		crate::send_msg("/disconnect");
+		crate::send_msg("Disconnecting".to_string());
+		crate::send_msg("/disconnect".to_string());
 	}
 }
 
 // REGULAR \\
-fn response_from_file() {
+fn response_from_file() -> String {
 	let mut file = File::open("src/responses/example.txt").expect("Unable to open the file");
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Unable to read the file");
-    crate::send_msg(&contents.replace("\n", " ").replace("\r", ""))
-}
 
-fn ping() {
-	crate::send_msg("Pong!")
-}
-
-fn hug(user: &str) {
-	crate::send_msg(&format!("/me hugs {}!", user))
+    //crate::send_msg(&contents.replace("\n", " ").replace("\r", ""))
+    contents.replace("\n", " ").replace("\r", "")
 }
