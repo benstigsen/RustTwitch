@@ -11,7 +11,7 @@ pub fn handle_command(user: &str, msg: &str) -> String {
         "disconnect" | "dc" => {disconnect(user); "".to_string()},
 
         // REGULAR
-        "example" | "file"  => response_from_file(),
+        "example" | "file"  => response_from_file("example.txt").to_string(),
 
         "ping"              => "Pong!".to_string(),
         "hug"               => format!("/me hugs {}!", user),
@@ -38,8 +38,9 @@ fn disconnect(user: &str) {
 }
 
 // REGULAR \\
-fn response_from_file() -> String {
-    let mut file = File::open("src/responses/example.txt").expect("Unable to open the file");
+// Get response from file
+fn response_from_file(name: &str) -> String {
+    let mut file = File::open(format!("src/responses/{}", name)).expect("Unable to open the file");
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Unable to read the file");
 
