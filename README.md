@@ -16,7 +16,7 @@ Twitch chatbot written in Rust.
 
 ---
 
-### Setup
+### Usage / Setup
 
 Create a file called **credentials.txt**, add the following three lines to it:
 
@@ -27,6 +27,14 @@ channel
 ```
 
 *Replace the oauth token, botname and channel with your own values.*
+
+---
+
+Add commands to **commands.rs** in the `handle_commands()` function.
+
+Then you can
+- Respond directly with a string
+- Call a function which will do / return something
 
 ---
 
